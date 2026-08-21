@@ -2,3 +2,13 @@ node_modules
 dist
 .DS_Store
 .env
+.venv
+
+# Archivos de configuración de agentes (no forman parte del material del curso)
+CLAUDE.md
+GEMINI.md
+.claude/
+
+# Artefactos generados al ejecutar los ejemplos
+agent.log
+*.log

@@ -42,7 +42,9 @@ class Plan:
     """Plan completo"""
     goal: str
     steps: List[PlanStep]
-    created_at: float
+    # Sin valor por defecto, `Plan(goal=..., steps=...)` fallaba con TypeError
+    # pese a que __post_init__ ya contempla el caso None.
+    created_at: float = None
     estimated_total_duration: float = 0.0
     status: str = "created"
     

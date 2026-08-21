@@ -2,14 +2,14 @@
 
 ## 📋 Descripción General
 
-En este módulo exploramos los fundamentos de la arquitectura de agentes inteligentes basados en LLM, progresando desde implementaciones básicas hasta frameworks avanzados como LangChain y CrewAI. Incluye configuraciones específicas para integración con GitHub Models API y soluciones a problemas comunes de compatibilidad.
+En este módulo exploramos los fundamentos de la arquitectura de agentes inteligentes basados en LLM, progresando desde implementaciones básicas hasta frameworks avanzados como LangChain y CrewAI. Incluye configuraciones específicas para integración con los proveedores compatibles con OpenAI y soluciones a problemas comunes de compatibilidad.
 
 ## 🎯 Objetivos de Aprendizaje
 
 - Comprender qué es un agente inteligente y sus componentes fundamentales (cerebro, memoria, herramientas, planificación)
 - Dominar el ciclo de razonamiento ReAct (Reason + Act) y el Function Calling nativo de OpenAI
 - Implementar agentes desde cero y usando frameworks LangChain y CrewAI
-- Configurar correctamente frameworks con GitHub Models API
+- Configurar el proveedor de LLM en LangChain y en CrewAI
 - Diseñar equipos de agentes colaborativos para tareas complejas
 - Entender criterios de selección entre diferentes frameworks
 
@@ -41,41 +41,60 @@ En este módulo exploramos los fundamentos de la arquitectura de agentes intelig
   - Conceptos: Agent, Task, Crew, Process
   - Especialización por roles: Investigador, Escritor
   - Coordinación secuencial con dependencias
-  - **🔧 CONFIGURACIÓN CRÍTICA**: Mapeo de variables para GitHub Models API
+  - **🔧 CONFIGURACIÓN**: El objeto `LLM` de CrewAI y su proveedor
 
 ## 🔧 Configuraciones Técnicas Importantes
 
 ### Variables de Entorno Requeridas
+
+Copia `.env.example` a `.env` en la raíz del repo. En Colab, los notebooks leen
+estos mismos nombres desde el panel 🔑 **Secrets**.
+
 ```bash
-export OPENAI_BASE_URL="https://models.inference.ai.azure.com"
-export GITHUB_TOKEN="tu_token_de_github"
+LLM_BASE_URL="https://api.mistral.ai/v1"
+LLM_API_KEY="tu_key"
+LLM_MODEL="mistral-small-latest"
 ```
 
 ### Configuración para LangChain
 ```python
-# LangChain funciona directamente con las variables estándar
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm = ChatOpenAI(
+    base_url=os.getenv("LLM_BASE_URL"),
+    api_key=os.getenv("LLM_API_KEY"),
+    model=os.getenv("LLM_MODEL", "mistral-small-latest"),
+    temperature=0,
+)
 ```
 
-### Configuración para CrewAI (CRÍTICA)
+### Configuración para CrewAI
 ```python
-# CrewAI requiere mapeo específico de variables
-import os
-os.environ["OPENAI_API_BASE"] = os.environ.get("OPENAI_BASE_URL", "")
-os.environ["OPENAI_API_KEY"] = os.environ.get("GITHUB_TOKEN", "")
+# CrewAI NO usa LangChain: por debajo usa LiteLLM, con su propia clase LLM.
+# El prefijo "openai/" le indica que hable el protocolo de OpenAI contra
+# nuestro base_url, así funciona con cualquier proveedor compatible.
+from crewai import LLM
+
+llm = LLM(
+    model="openai/" + os.getenv("LLM_MODEL", "mistral-small-latest"),
+    base_url=os.getenv("LLM_BASE_URL"),
+    api_key=os.getenv("LLM_API_KEY"),
+    temperature=0,
+)
 ```
 
 ## ⚠️ Problemas Comunes y Soluciones
 
 ### 1. Error de Autenticación en CrewAI
 **Síntoma**: `AuthenticationError: Incorrect API key provided`
-**Causa**: CrewAI utiliza LangChain internamente, espera variables específicas
-**Solución**: Mapear `GITHUB_TOKEN` → `OPENAI_API_KEY` y `OPENAI_BASE_URL` → `OPENAI_API_BASE`
+**Causa**: no se le pasó el proveedor al objeto `LLM` de CrewAI, y LiteLLM
+intentó ir a OpenAI por defecto.
+**Solución**: construir `LLM(model="openai/...", base_url=..., api_key=...)`
+con las variables `LLM_*` y pasarlo a cada `Agent(llm=llm)`.
 
 ### 2. Error de Herramientas en CrewAI
 **Síntoma**: `'Tool' object is not callable`
 **Causa**: Mezclar decorador `@tool` de LangChain con CrewAI
-**Solución**: Usar `BaseTool` de `crewai_tools`
+**Solución**: Usar `BaseTool`, que en CrewAI 1.x se importa desde
+`crewai.tools` (antes estaba en `crewai_tools`).
 
 ### 3. Error de Parámetro Verbose
 **Síntoma**: `ValidationError: Input should be a valid boolean`
@@ -126,7 +145,7 @@ os.environ["OPENAI_API_KEY"] = os.environ.get("GITHUB_TOKEN", "")
 ### Base Establecida
 - ✅ Fundamentos sólidos de agentes inteligentes
 - ✅ Experiencia con frameworks principales
-- ✅ Configuraciones de producción para GitHub Models API
+- ✅ Configuración del proveedor mediante variables `LLM_*`
 - ✅ Patrones de colaboración entre agentes
 - ✅ Debugging y troubleshooting de sistemas complejos
 
@@ -139,7 +158,7 @@ os.environ["OPENAI_API_KEY"] = os.environ.get("GITHUB_TOKEN", "")
 
 ### Herramientas de Desarrollo
 - [LangSmith](https://smith.langchain.com/) - Observabilidad para agentes LangChain
-- [GitHub Models](https://github.com/marketplace/models) - Acceso a modelos de IA
+- [Groq](https://console.groq.com/docs/models) · [Mistral](https://docs.mistral.ai/) - Modelos gratuitos
 
 ### Troubleshooting y Soporte
 - [GitHub Issues - CrewAI](https://github.com/joaomdmoura/crewAI/issues)

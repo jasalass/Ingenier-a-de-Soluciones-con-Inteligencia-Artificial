@@ -558,7 +558,7 @@ class AlertManager:
 
 **Agente con herramientas de planificación:**
 ```python
-from langchain.agents import initialize_agent, Tool, AgentType
+from langchain_classic.agents import initialize_agent, Tool, AgentType  # LangChain v1: langchain.agents.create_agent
 
 # Herramienta de planificación simple
 def pasos_cafe(_):

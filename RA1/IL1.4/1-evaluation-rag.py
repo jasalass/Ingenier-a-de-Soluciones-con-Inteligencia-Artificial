@@ -13,8 +13,9 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 # LangChain imports
-from langchain_openai import OpenAIEmbeddings
-from langchain.schema import Document
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+# LangChain v1: langchain_core.messages / langchain_core.documents
+from langchain_classic.schema import Document
 
 # Load environment variables from .env file
 try:
@@ -23,44 +24,40 @@ try:
 except ImportError:
     st.warning("⚠️ python-dotenv no está instalado. Instálalo con: pip install python-dotenv")
 
-# --- Configuración del Cliente y Modelos de LangChain ---
-# Only set environment variables if they exist
-github_token = os.getenv("GITHUB_TOKEN")
-github_base_url = os.getenv("GITHUB_BASE_URL", "https://models.inference.ai.azure.com")
+# --- Configuración de proveedores ---
+# Chat  -> Groq   (API compatible con OpenAI)
+# Embed -> Gemini (Groq no expone endpoint de embeddings)
+llm_api_key = os.getenv("LLM_API_KEY")
+llm_base_url = os.getenv("LLM_BASE_URL", "https://api.mistral.ai/v1")
+google_api_key = os.getenv("GOOGLE_API_KEY")
 
-if github_token:
-    os.environ["OPENAI_API_KEY"] = github_token
-    os.environ["OPENAI_API_BASE"] = github_base_url
-else:
-    st.error("❌ GITHUB_TOKEN environment variable is not set. Please check your .env file.")
-    st.info("💡 Make sure your .env file contains: GITHUB_TOKEN=your_token_here")
+if not llm_api_key:
+    st.error("❌ Falta LLM_API_KEY (key de Groq). Revisa tu archivo .env.")
+    st.info("💡 Consíguela gratis en https://console.mistral.ai/api-keys")
+    st.stop()
+
+if not google_api_key:
+    st.error("❌ Falta GOOGLE_API_KEY (key de Gemini, usada para los embeddings).")
+    st.info("💡 Consíguela gratis en https://aistudio.google.com/apikey")
     st.stop()
 
 st.set_page_config(page_title="RAG Evaluation", page_icon="📊", layout="wide")
 
 def initialize_client():
-    if not github_token:
-        st.error("❌ GitHub token not available")
-        return None
-    
-    client = OpenAI(
-        base_url=github_base_url,
-        api_key=github_token
+    """Cliente de chat apuntando a Groq."""
+    return OpenAI(
+        base_url=llm_base_url,
+        api_key=llm_api_key,
     )
-    return client
 
 def initialize_embeddings():
-    """Initialize LangChain embeddings model"""
-    if not github_token:
-        st.error("❌ GitHub token not available for embeddings")
-        return None
-    
+    """Modelo de embeddings de Gemini (Google AI Studio)."""
     try:
-        # Modelo de embeddings (compatible con la API de OpenAI)
-        embeddings = OpenAIEmbeddings(
-            model="text-embedding-3-small"
+        return GoogleGenerativeAIEmbeddings(
+            model="gemini-embedding-001",
+            output_dimensionality=768,
+            google_api_key=google_api_key,
         )
-        return embeddings
     except Exception as e:
         st.error(f"Error initializing embeddings: {str(e)}")
         return None
@@ -114,10 +111,10 @@ Responde SOLO con el número:"""
 
     try:
         result = client.chat.completions.create(
-            model="gpt-4o",
+            model=os.getenv("LLM_MODEL", "mistral-small-latest"),
             messages=[{"role": "user", "content": eval_prompt}],
             temperature=0.1,
-            max_tokens=10
+            max_tokens=150
         )
         return float(result.choices[0].message.content.strip())
     except:
@@ -143,10 +140,10 @@ Responde SOLO con el número:"""
 
     try:
         result = client.chat.completions.create(
-            model="gpt-4o",
+            model=os.getenv("LLM_MODEL", "mistral-small-latest"),
             messages=[{"role": "user", "content": eval_prompt}],
             temperature=0.1,
-            max_tokens=10
+            max_tokens=150
         )
         return float(result.choices[0].message.content.strip())
     except:
@@ -168,10 +165,10 @@ Responde SOLO 'SI' o 'NO':"""
         
         try:
             result = client.chat.completions.create(
-                model="gpt-4o",
+                model=os.getenv("LLM_MODEL", "mistral-small-latest"),
                 messages=[{"role": "user", "content": eval_prompt}],
                 temperature=0.1,
-                max_tokens=5
+                max_tokens=150
             )
             if result.choices[0].message.content.strip().upper() == 'SI':
                 relevant_count += 1
@@ -232,7 +229,7 @@ Responde basándote únicamente en el contexto proporcionado."""
 
     try:
         response = client.chat.completions.create(
-            model="gpt-4o",
+            model=os.getenv("LLM_MODEL", "mistral-small-latest"),
             messages=[{"role": "user", "content": prompt}],
             temperature=0.7,
             max_tokens=600
@@ -300,10 +297,10 @@ def main():
     st.title("📊 RAG con Evaluación y Monitoreo (LangChain)")
     st.write("Sistema RAG con métricas detalladas usando LangChain para embeddings")
     
-    # Check if GitHub token is available
-    if not github_token:
-        st.error("❌ Please check your .env file and make sure GITHUB_TOKEN is set.")
-        st.info("💡 Your .env file should contain: GITHUB_TOKEN=your_token_here")
+    # Verificar que la key de Groq esté disponible
+    if not llm_api_key:
+        st.error("❌ Please check your .env file and make sure LLM_API_KEY is set.")
+        st.info("💡 Your .env file should contain: LLM_API_KEY=tu_key_de_groq")
         return
     
     if "eval_rag" not in st.session_state:

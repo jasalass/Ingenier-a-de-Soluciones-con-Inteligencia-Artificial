@@ -19,7 +19,7 @@
 - **Arquitectura:** Basados en Transformers
 - **Funcionamiento:** Predicción de tokens basada en contexto
 - **Capacidades:** Generación, comprensión y análisis de texto
-- **Proveedores principales:** OpenAI, GitHub Models, Anthropic, Google
+- **Proveedores principales:** Groq, Mistral, OpenAI, Anthropic, Google
 
 **Conceptos clave:**
 - Tokens, embeddings, atención
@@ -30,16 +30,16 @@
 ## Slide 3: Configuración del Entorno
 **Título:** Preparación Técnica
 
-**Variables de entorno requeridas:**
+**Variables de entorno requeridas** (archivo `.env` en la raíz):
 ```bash
-export GITHUB_BASE_URL="https://models.inference.ai.azure.com"
-export GITHUB_TOKEN="tu_token_de_github"
-export OPENAI_BASE_URL="https://models.inference.ai.azure.com"
+LLM_BASE_URL="https://api.mistral.ai/v1"
+LLM_API_KEY="gsk_..."          # gratis en console.mistral.ai/api-keys
+GOOGLE_API_KEY="AIza..."       # gratis en aistudio.google.com/apikey (solo embeddings)
 ```
 
 **Dependencias:**
 ```bash
-pip install openai langchain langchain-openai
+pip install -r requirements.txt
 ```
 
 **Mejores prácticas de seguridad:**
@@ -50,20 +50,25 @@ pip install openai langchain langchain-openai
 ---
 
 ## Slide 4: Conexión Directa con API
-**Título:** Notebook 1 - GitHub Models API
+**Título:** Notebook 1 - Conexión directa con la API (Groq)
 
 **Pasos a seguir:**
-1. Configurar cliente OpenAI con base_url personalizada
-2. Realizar primera llamada básica al modelo
-3. Explorar parámetros: temperature, max_tokens
-4. Implementar manejo de errores
-5. Usar mensajes de sistema para definir comportamiento
+1. Preparar el entorno: instalar dependencias y cargar las credenciales
+   (Secrets de Colab o archivo `.env`)
+2. Configurar el cliente `OpenAI` con `base_url` apuntando a Groq
+3. Realizar la primera llamada e interpretar la respuesta: contenido,
+   modelo usado y consumo de tokens
+4. Definir el comportamiento del modelo con mensajes `system`
+5. Explorar `temperature` comparando la misma consigna con 0.1 / 0.5 / 0.9
+
+> El manejo de errores con `try/except` no es una etapa aparte: acompaña a
+> **todas** las llamadas desde el paso 3.
 
 **Código básico:**
 ```python
 client = OpenAI(
-    base_url=os.environ.get("GITHUB_BASE_URL"),
-    api_key=os.environ.get("GITHUB_TOKEN")
+    base_url=os.environ.get("LLM_BASE_URL"),
+    api_key=os.environ.get("LLM_API_KEY")
 )
 ```
 
@@ -81,9 +86,9 @@ client = OpenAI(
 **Implementación:**
 ```python
 llm = ChatOpenAI(
-    base_url=os.getenv("OPENAI_BASE_URL"),
-    api_key=os.getenv("GITHUB_TOKEN"),
-    model="gpt-4o"
+    base_url=os.getenv("LLM_BASE_URL"),
+    api_key=os.getenv("LLM_API_KEY"),
+    model="mistral-small-latest"
 )
 ```
 
@@ -174,7 +179,7 @@ for chunk in llm.stream([HumanMessage(content=prompt)]):
 
 **Recursos adicionales:**
 - [Documentación OpenAI API](https://platform.openai.com/docs)
-- [GitHub Models Documentation](https://docs.github.com/en/github-models)
+- [Documentación de Groq](https://console.groq.com/docs/models)
 - [LangChain Documentation](https://python.langchain.com/docs/)
 - [Transformer Architecture Paper](https://arxiv.org/abs/1706.03762)
 

@@ -27,4 +27,9 @@ Al finalizar este módulo, serás capaz de:
 
 ## Instrucciones
 
-Para comenzar, abre y ejecuta los cuadernos en el orden listado. Asegúrate de tener las variables de entorno (`GITHUB_BASE_URL`, `GITHUB_TOKEN`, etc.) configuradas como se describe en el `README.md` principal del repositorio.
+Para comenzar, abre y ejecuta los cuadernos en el orden listado. Asegúrate de tener las variables de entorno (`LLM_BASE_URL`, `LLM_API_KEY` y `GOOGLE_API_KEY`) configuradas como se describe en el `README.md` principal del repositorio.
+
+> **Nota sobre embeddings:** el chat de estos cuadernos usa Groq, pero Groq no ofrece
+> endpoint de embeddings. Por eso los notebooks 3 y 4 generan los vectores con
+> **Gemini** (`gemini-embedding-001`) vía Google AI Studio, que es gratis y solo
+> requiere la cuenta de Google que ya usas para Colab. De ahí viene `GOOGLE_API_KEY`.

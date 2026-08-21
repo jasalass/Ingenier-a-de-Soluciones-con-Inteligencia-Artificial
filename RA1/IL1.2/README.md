@@ -121,8 +121,8 @@ Problema + "Piensa paso a paso" → Razonamiento + Solución
 ### Bibliotecas Útiles
 ```python
 # Evaluación de prompts
-from langchain.evaluation import load_evaluator
-from langchain.prompts import PromptTemplate
+from langchain_classic.evaluation import load_evaluator  # LangChain v1: langsmith.evaluation
+from langchain_classic.prompts import PromptTemplate  # LangChain v1: langchain_core.prompts
 
 # Testing y comparación
 import pandas as pd
